@@ -4,10 +4,10 @@ class Player():
         self.y = y
         self.vel = vel
 
-    def getPos(self):
-        return self.x, self.y
+    def getPosX(self):
+        return self.x
     
-    def updatePos(self, addX, addY, winWidth=0, pWidth=0):
+    def updatePos(self, addX, addY, pWidth=0, winWidth=0):
         self.x += addX
         self.y += addY
         if self.x < pWidth/2:
