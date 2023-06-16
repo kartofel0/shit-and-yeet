@@ -4,7 +4,6 @@ class Shit(Player):
     def __init__(self, x, y, floorY):
         self.x = x
         self.y = y
-        #self.vel = 3
         self.floorY = floorY
         self.active = True
 
