@@ -1,8 +1,8 @@
 from player import Player
 
 class Pijen(Player):
-    def __init__(self, x, y, vel, shitNum):
-        super().__init__(x, y, vel)
+    def __init__(self, x, y, vel, anim, direction, shitNum):
+        super().__init__(x, y, vel, anim, direction)
         self.shitNum = shitNum
 
     def getShitNum(self):
