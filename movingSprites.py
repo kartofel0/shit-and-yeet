@@ -18,9 +18,7 @@ class MovingSprites():
         self.images = self.divideSpritesheet(0, 0, self.ssw/amount, self.ssh, amount)
         #print(len(self.images))
         self.cur_sprite = 0
-        #self.image = self.images[self.cur_sprite]
-        self.image = self.images[2] ########### change to 3 already
-        self.image = pygame.transform.scale_by(self.image, 0.15)
+        self.image = self.images[self.cur_sprite]
         self.rect = self.image.get_rect()
 
 
@@ -75,7 +73,7 @@ class MovingSprites():
         self.y = float(y)
         x = float(x)
         y = float(y)
-        #self.update(anim, scale, dir)  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        self.update(anim, scale, dir)
         win.blit(self.image, (x,y))  # problem with x
 
 
