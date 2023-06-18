@@ -83,6 +83,7 @@ def threaded_client(client_soc, num):
                 y = pijen.getPosY()
                 #shitList.insert(0, Shit(x, y, 4))
                 if pijen.getShitNum() == 0:
+                    print('no more pijen shits left sorry hehe')
                     reply = 'no'
                 else:
                     pijen.shit()
