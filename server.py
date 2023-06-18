@@ -62,7 +62,8 @@ def threaded_client(client_soc, num):
                     human.setAnim(anim)
                     human.setDir(direction)
             except:
-                print(type + ' sent a message: ' + action + ', no add ons')
+                pass
+                #print(type + ' sent a message: ' + action + ', no add ons')
         
 
 
