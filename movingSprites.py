@@ -59,7 +59,7 @@ class MovingSprites():
         else:
             self.cur_sprite = self.amount-1
 
-        print('current sprite num: ' + str(int(self.cur_sprite+1)) + ' out of ' + str(len(self.images)))
+        #print('current sprite num: ' + str(int(self.cur_sprite+1)) + ' out of ' + str(len(self.images)))
 
         self.image = self.images[int(self.cur_sprite)]
         self.image = pygame.transform.scale_by(self.image, scale)
@@ -74,10 +74,4 @@ class MovingSprites():
         x = float(x)
         y = float(y)
         self.update(anim, scale, dir)
-        win.blit(self.image, (x,y))  # problem with x
-
-
-# in draw() uncomment update() line 77, delete line 23
-# uncomment line 21, delete line 22
-
-# line 22 !!!
+        win.blit(self.image, (x,y))
