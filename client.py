@@ -130,7 +130,8 @@ def DropShit(): #
     data = []
     if player_type == 'pjn':
         keys = pygame.key.get_pressed()
-        if keys[pygame.K_RSHIFT] or keys[pygame.K_LSHIFT]:
+        #if keys[pygame.K_RSHIFT] or keys[pygame.K_LSHIFT]:
+        if keys[pygame.K_SPACE]:
             my_socket.send('pjn,sht'.encode())
             # recieve position and draw shit
             data = my_socket.recv(1024).decode()
@@ -143,7 +144,7 @@ def DropShit(): #
                 can_shit = True
     if can_shit:
         data = data.split(',')
-        shit = MovingSprites('sht.png', 0, 0, 1)
+        shit = MovingSprites('sht.png', 138, 522, 1)
         shitList.append([shit,shit.getRect(),data[0],data[1]])
 
 def EliminateShit():
@@ -168,7 +169,8 @@ def ShatOn():
 
 def redrawShit(): #[shit,rect,x,y]
     for shit in shitList:
-        shit[0].draw(win, shit[2], shit[3]+5, False, 1)    # win x y false scale
+        print('drawing shit')
+        shit[0].draw(win, float(shit[2]), float(shit[3])+5, False, 0.1)    # win x y false scale
         shit[1] = shit[0].getRect()
         shit[3] = shit[0].getPosY()
 
