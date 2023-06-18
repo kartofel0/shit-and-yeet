@@ -43,21 +43,41 @@ player_type = data[0]
 posX = float(data[1])
 posY = float(data[2])
 vel = float(data[3])
-#direction = 'l'
+posXe = float(data[4])
+posYe = float(data[5])
+vele = float(data[6])
+
+#if player_type == 'pjn':
+    #player_info = {'anim':True, 'w':7515, 'h':498, 'amount':15}
+    #anim = True
+    #w = 7515
+    #h = 498
+    #amount = 15
+    #shitList = []    # [ [shit,rect,x,y], ... ]
+#elif player_type == 'hmn':
+    #player_info = {'anim':False, 'w':8602, 'h':669, 'amount':23}
+    #anim = False
+    #w = 8602
+    #h = 669
+    #amount = 23
+
+pjn_info = {'anim':True, 'w':7515, 'h':498, 'amount':15}
+hmn_info = {'anim':False, 'w':8602, 'h':669, 'amount':23}
+shitList = []    # [ [shit,rect,x,y], ... ]
+
 if player_type == 'pjn':
-    anim = True
-    w = 7515
-    h = 498
-    amount = 15
-    shitList = []    # [ [shit,rect,x,y], ... ]
+    enemy_type = 'hmn'
+    player_info = pjn_info
+    enemy_info = hmn_info
+#    player = MovingSprites('pjn.png', pjn_info['w'], pjn_info['h'], pjn_info['amount'])
+#    enemy = MovingSprites('hmn.png', hmn_info['w'], hmn_info['h'], hmn_info['amount'])
 elif player_type == 'hmn':
-    anim = False
-    w = 8602
-    h = 669
-    amount = 23
+    enemy_type = 'pjn'
+    player_info = hmn_info
+    enemy_info = pjn_info
+player = MovingSprites(player_type + '.png', player_info['w'], player_info['h'], player_info['amount'])
+enemy = MovingSprites(enemy_type + '.png', enemy_info['w'], enemy_info['h'], enemy_info['amount'])
 
-
-player = MovingSprites(player_type + '.png', w, h, amount)
 
 
 # wait for begin
@@ -66,6 +86,7 @@ while wait:
     try:
         start = my_socket.recv(1024).decode()
         if start == 'start':
+            print('recieved message to start')
             wait = False
     except:
         pass
@@ -90,39 +111,51 @@ def Move(dir): #
         direction = 'r'
     
     # type mov addX pWidth
-    my_socket.send((player_type + ',mov,' + str(moveX) + ',' + str(w/amount)).encode())
+    my_socket.send((player_type + ',mov,' + str(moveX) + ',' + str(player_info['w']/player_info['amount']) + ',' + str(anim) + ',' + direction).encode()) # type mov movex pwidth anim direction
 
     # recieve updated pos
-    posX = my_socket.recv(1024).decode()
+    updt = my_socket.recv(1024).decode()
+    updt = updt.split(',')
+    posX = updt[0]
+    anime = updt[1]
+    directione = updt[2]
+    posXe = updt[3]
 
-    return anim, direction, posX
+    return anim, direction, posX, anime, directione, posXe
     
 
 def DropShit(): #
     # if pressed shift send 'sht' etc
+    can_shit = False
+    data = []
     if player_type == 'pjn':
         keys = pygame.key.get_pressed()
         if keys[pygame.K_RSHIFT] or keys[pygame.K_LSHIFT]:
             my_socket.send('pjn,sht'.encode())
             # recieve position and draw shit
             data = my_socket.recv(1024).decode()
-            if data == 'no':
-                pass
-            else:
-                data = data.split(',')
-                shit = MovingSprites('sht.png', 0, 0, 1)
-                shitList.append([shit,shit.getRect(),data[0],data[1]])
+            print('drop shit recieved data: ' + data)
+            #if data == 'no':
+            #    pass
+            #else:
+            #    can_shit = True
+            if data != 'no':
+                can_shit = True
+    if can_shit:
+        data = data.split(',')
+        shit = MovingSprites('sht.png', 0, 0, 1)
+        shitList.append([shit,shit.getRect(),data[0],data[1]])
 
 def EliminateShit():
-    if player_type == 'pjn':
-        if len(shitList) > 0:
-            if floor_rect.colliderect(shitList[0][1]):
-                shitList.pop(0)
-                my_socket.send('pjn,rmv'.encode())
-                if my_socket.recv(1024).decode() == 0:
-                    my_socket.send('end'.encode())    # run false
-                else:
-                    my_socket.send('ok'.encode())
+    #if player_type == 'pjn':
+    if len(shitList) > 0:
+        if floor_rect.colliderect(shitList[0][1]):
+            shitList.pop(0)
+            my_socket.send('pjn,rmv'.encode())
+            if my_socket.recv(1024).decode() == 0:
+                my_socket.send('end'.encode())    # run false
+            else:
+                my_socket.send('ok'.encode())
 
 def ShatOn():
     if player_type == ' hmn':
@@ -145,7 +178,7 @@ def printText(content, clr, bgClr, anchor):
     textRect.topleft = anchor
     return text, textRect
 
-def redrawWindow(px, py, anim, scale, dir, cntdwn):
+def redrawWindow(px, py, anim, scale, dir, ex, ey, anime, dire ,cntdwn):
     win.fill((255,255,255))
 
     now = cntdwn.getTime()
@@ -155,8 +188,9 @@ def redrawWindow(px, py, anim, scale, dir, cntdwn):
     win.blit(text, textRect)
 
     player.draw(win, px, py, anim, scale, dir)
-    if player_type == 'pjn':
-        redrawShit()
+    enemy.draw(win, ex, ey, anime, scale, dire)
+    #if player_type == 'pjn':
+    redrawShit()
 
     pygame.display.update()
 
@@ -191,8 +225,8 @@ def main( ):
         EliminateShit()
         ShatOn()
 
-        anim, direction, posX = Move(direction)
-        redrawWindow(posX, posY, anim, 0.2, direction, countdown_game)
+        anim, direction, posX, anime, directione, posXe = Move(direction)
+        redrawWindow(posX, posY, anim, 0.2, direction, posXe, posYe, anime, directione,countdown_game)
         # anim, direction, posX = move()
         # redraw window     !!! draw(float(posX), float(posY), direction, anim, scale)
 
