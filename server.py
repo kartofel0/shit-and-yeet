@@ -1,6 +1,3 @@
-# client connected
-# send window dimensions, who are you
-
 import socket
 from player import Player
 from pijen import Pijen
@@ -9,22 +6,24 @@ from shit import Shit
 
 IP_ADDR = '192.168.0.180'
 PORT = 5555
-WINDOW_WIDTH = 1600
-WINDOW_HEIGHT = 900
+WINDOW_WIDTH = 800
+WINDOW_HEIGHT = 500
 
 playerNum = 0
 
+posX = WINDOW_WIDTH/2
+pjnY = WINDOW_HEIGHT/5
+hmnY = WINDOW_HEIGHT-100
 pjn_vel = 3
 hmn_vel = 3.3
 
-pijen = Pijen(WINDOW_WIDTH/2, WINDOW_HEIGHT/5, pjn_vel, 5)
-human = Player(WINDOW_WIDTH/2, WINDOW_HEIGHT-100, hmn_vel)
+pijen = Pijen(posX, pjnY, pjn_vel, 5)
+human = Player(posX, hmnY, hmn_vel)
 
-shitList = []
+#shitList = []
 
 
-#def endGame()
-
+#def endGame() !!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 
 
@@ -33,26 +32,35 @@ shitList = []
 
 
 server_soc = socket.socket()
-server_soc.bind((IP_ADDR, PORT))   #whoever tries to connect to that ip connects to that port
+server_soc.bind((IP_ADDR, PORT))
 server_soc.listen(2)
 print('Server started, waiting for connection')
 
 
 while playerNum < 2:
     try:
-        (client_soc, client_addr) = server_soc.accept() #returns tuple 1 - client's sockets object, 2 - tuple with client ip and port
+        (client_soc, client_addr) = server_soc.accept()    # start new thread
         print('Client connected')
     except:
         print('couldn\'t connect client')
 
 
-    # send window dimension, who are you
+    # accept window dimensions
+    #win_dimensions = client_soc.recv(1024).decode().split(',')
+    #WINDOW_WIDTH = float(win_dimensions[0])
+    #WINDOW_HEIGHT = float(win_dimensions[1])
+    
+    # send who are you, xpos, ypos, velocity
     if playerNum == 0:
-        client_soc.send('pjn,{pjn_vel}'.encode())
-        playerNum += 1
+        #client_soc.send(('pjn,' + str(posX) + ',' + str(pjnY) + ',' + str(pjn_vel)).encode())
+        reply = ('pjn,' + str(posX) + ',' + str(pjnY) + ',' + str(pjn_vel))
+        #playerNum += 1
     elif playerNum == 1:
-        client_soc.send('hmn,{hmn_vel}'.encode())
-        playerNum += 1
+        #client_soc.send(('hmn,' + ',' + str(posX) + ',' + str(hmnY) + ',' + str(hmn_vel)).encode())
+        reply = ('hmn,' + str(posX) + ',' + str(hmnY) + ',' + str(hmn_vel))
+        #playerNum += 1
+    client_soc.send(reply.encode())
+    playerNum += 1
 
 
 # now begin game
@@ -65,18 +73,20 @@ run = True
 while run:
     # data: ['???,mov,addX,pWidth']
     # data: ['pjn,sht']
+    # data: ['pjn,rmv']
     # data: ['hmn,hit']
     # data: ['???,end']
     data = client_soc.recv(1024).decode()
-    data = data.split(',')
-    #dataLen = len(data)
-    type = data[0]
-    action = data[1]
-    try:
-        addX = data[2]
-        pWidth = data[3]
-    except:
-        pass
+    if data != None and data != '':
+        print('message from client: ' + data)
+        data = data.split(',')
+        type = data[0]
+        action = data[1]
+        try:
+            addX = float(data[2])
+            pWidth = float(data[3])
+        except:
+            print(type + ' sent a message: ' + action + ', no add ons')
     
 
 
@@ -93,20 +103,29 @@ while run:
             client_soc.send(reply.encode())
         
         case 'sht':
-            pass
-            # create shit object, add to shitList as first
-            # send to client position
+            x = pijen.getPosX
+            y = pijen.getPosY
+            #shitList.insert(0, Shit(x, y, 4))
+            if pijen.getShitNum() == 0:
+                reply = 'no'
+            else:
+                pijen.shit()
+                reply = str(x) + ',' + str(y)
+            client_soc.send(reply.encode())
 
         case 'rmv':    # shit reached floor, eliminate shit
-            pass
-            # remove first shit from list
+            reply = pijen.getShitNum()
+            client_soc.send(str(reply).encode())
+            if client_soc.recv(1024).decode() == 'end':
+                print('no more shits, human wins') # run false, winner = hmn wins
 
         case 'hit':
-            pass    # run false, winner = pjn wins
+            print('human shat on, pijen wins')    # run false, winner = pjn wins
 
-        case 'end':    # timer ended /  no more poops from pijen
-            pass    # run false, winner = hmn wins
+        case 'end':    # timer ended
+            print('time ended, human wins')    # run false, winner = hmn wins
 
+    action = ''
 # endGame(winner)
 
 
