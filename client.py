@@ -5,7 +5,8 @@ import os
 from movingSprites import MovingSprites
 from countdown import Countdown
 
-os.chdir('c:\\vica\\computer\\cyber\\shitAndYeet')
+dir_path = os.path.dirname(os.path.realpath(__file__))
+os.chdir(dir_path)
 
 # draw window
 pygame.init()
