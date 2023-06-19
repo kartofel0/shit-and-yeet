@@ -1,0 +1,12 @@
+check human shit collision
+check when last poop hits floor
+
+draw kakashka on other screen as well
+make end game
+
+add background
+change floor?
+shit collides with person range?
+
+change sprite size
+change anim rate
