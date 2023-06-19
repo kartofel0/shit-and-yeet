@@ -20,6 +20,8 @@ class MovingSprites():
         self.cur_sprite = 0
         self.image = self.images[self.cur_sprite]
         self.rect = self.image.get_rect()
+        self.y = 0
+        self.scale = 1
 
 
     def divideSpritesheet(self, sprite_start_x,sprite_start_y,sprite_size_x,sprite_size_y,sheet_frames):
@@ -42,6 +44,9 @@ class MovingSprites():
     
     def getPosY(self):
         return self.y
+    
+    def getHeight(self):
+        return self.ssh * self.scale
 
 
     def getImage(self, posX, posY, width, height):
@@ -71,6 +76,7 @@ class MovingSprites():
     def draw(self, win, x, y, anim, scale, dir=None):
         #self.x = float(x)
         self.y = float(y)
+        self.scale = scale
         x = float(x)
         y = float(y)
         self.update(anim, scale, dir)
