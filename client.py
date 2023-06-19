@@ -2,6 +2,7 @@ import socket
 import pygame
 from _thread import *
 import os
+import time
 from movingSprites import MovingSprites
 from countdown import Countdown
 
@@ -19,11 +20,13 @@ pygame.display.set_caption('shit n yeet')
 font = pygame.font.Font('test_font.ttf', 20)
 
 # draw floor
-floor_surface = pygame.Surface((WINDOW_WIDTH,50))
-floor_surface.set_alpha(128)
-floor_surface.fill((255,255,255))
-win.blit(floor_surface, (0,WINDOW_HEIGHT-50))
-floor_rect = floor_surface.get_rect()
+#floor_surface = pygame.Surface((WINDOW_WIDTH,50))
+#floor_surface.set_alpha(128)
+#floor_surface.fill((0,0,0))
+#win.blit(floor_surface, (0,300))
+#floor_rect = floor_surface.get_rect()
+#print('floor surf: ' + str(floor_surface))
+#print('floor rect: ' + str(floor_rect))
 
 
 # connect to server
@@ -47,6 +50,8 @@ vel = float(data[3])
 posXe = float(data[4])
 posYe = float(data[5])
 vele = float(data[6])
+
+scale = 0.2
 
 #if player_type == 'pjn':
     #player_info = {'anim':True, 'w':7515, 'h':498, 'amount':15}
@@ -101,7 +106,10 @@ def Move(dir): #
     else:
         anim = True
 
-    keys = pygame.key.get_pressed()
+    yes = True
+    while yes:
+        keys = pygame.key.get_pressed()
+        yes = False
     if keys[pygame.K_LEFT]:
         anim = True
         moveX -= vel 
@@ -112,7 +120,7 @@ def Move(dir): #
         direction = 'r'
     
     # type mov addX pWidth
-    my_socket.send((player_type + ',mov,' + str(moveX) + ',' + str(player_info['w']/player_info['amount']) + ',' + str(anim) + ',' + direction).encode()) # type mov movex pwidth anim direction
+    my_socket.send((player_type + ',mov,' + str(moveX) + ',' + str(player_info['w']/player_info['amount']*scale) + ',' + str(anim) + ',' + direction).encode()) # type mov movex pwidth anim direction
 
     # recieve updated pos
     updt = my_socket.recv(1024).decode()
@@ -125,55 +133,77 @@ def Move(dir): #
     return anim, direction, posX, anime, directione, posXe
     
 
-def DropShit(): #
+def DropShit(prev, shitList): #
     # if pressed shift send 'sht' etc
-    can_shit = False
-    data = []
-    if player_type == 'pjn':
-        keys = pygame.key.get_pressed()
-        #if keys[pygame.K_RSHIFT] or keys[pygame.K_LSHIFT]:
-        if keys[pygame.K_SPACE]:
-            my_socket.send('pjn,sht'.encode())
-            # recieve position and draw shit
-            data = my_socket.recv(1024).decode()
-            print('drop shit recieved data: ' + data)
-            #if data == 'no':
-            #    pass
-            #else:
-            #    can_shit = True
-            if data != 'no':
-                can_shit = True
-    if can_shit:
-        data = data.split(',')
-        shit = MovingSprites('sht.png', 138, 522, 1)
-        shitList.append([shit,shit.getRect(),data[0],data[1]])
 
-def EliminateShit():
+    sent = False
+    t = time.time()
+    #print('t - prev = ' + str(t-prev))
+    if (t - prev > 1):
+        can_shit = False
+        data = []
+        if player_type == 'pjn':
+
+            keys = pygame.key.get_pressed()
+            #if keys[pygame.K_RSHIFT] or keys[pygame.K_LSHIFT]:
+            if keys[pygame.K_SPACE]:
+                prev = t
+                my_socket.send('pjn,sht'.encode())
+                sent = True
+                print('sent: ' + str(sent))
+            
+            if sent:
+                # recieve position and draw shit
+                data = my_socket.recv(1024).decode()
+                print('drop shit recieved data: ' + data)
+                #if data == 'no':
+                #    pass
+                #else:
+                #    can_shit = True
+                if data != 'no':
+                    can_shit = True
+
+        if can_shit:
+            data = data.split(',')
+            shit = MovingSprites('sht.png', 138, 522, 1)
+            shitList.append([shit,shit.getRect(),str(float(data[0])+(pjn_info['w']/pjn_info['amount'])/2*scale),str(float(data[1])+pjn_info['h']/2*scale)])
+            
+    return sent, prev
+
+def EliminateShit(shitList):
+    sent = False
     #if player_type == 'pjn':
     if len(shitList) > 0:
-        if floor_rect.colliderect(shitList[0][1]):
+        if shitList[0][0].getPosY() > WINDOW_HEIGHT - shitList[0][0].getHeight():
             shitList.pop(0)
             my_socket.send('pjn,rmv'.encode())
+            sent = True
             if my_socket.recv(1024).decode() == 0:
                 my_socket.send('end'.encode())    # run false
             else:
                 my_socket.send('ok'.encode())
+    return sent
 
-def ShatOn():
+def ShatOn(shitList):
+    sent = False
     if player_type == ' hmn':
         rect = player.getRect()
         for shit in shitList:
             if rect.colliderect(shit[1]):
                 my_socket.send('hmn,hit'.encode())    # run false
+                sent = True
                 break
+    return sent
 
 
-def redrawShit(): #[shit,rect,x,y]
+def redrawShit(): #[ [shit,rect,x,y], ... ]
     for shit in shitList:
-        print('drawing shit')
-        shit[0].draw(win, float(shit[2]), float(shit[3])+5, False, 0.1)    # win x y false scale
+        print('shit')
+        shit[0].draw(win, float(shit[2]), float(shit[3])+5, False, 0.05)    # win x y false scale
         shit[1] = shit[0].getRect()
         shit[3] = shit[0].getPosY()
+        #print(str(shit[0]))
+        #shit[0].draw(win, 50, 200, False, 0.1)
 
 def printText(content, clr, bgClr, anchor):
     text = font.render(content, True, clr, bgClr)
@@ -203,6 +233,8 @@ def main( ):
     clock = pygame.time.Clock()
     countdown_start = Countdown(3)
     countdown_game = Countdown(30)
+    #shit_countdown = 0
+    now = 0
     # create movingSprites object
 
     # start 3 sec timer
@@ -216,7 +248,7 @@ def main( ):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 run = False
-                #pygame.quit()
+                pygame.quit()
 
         if countdown_game.getTime() == 0:
             my_socket.send('end'.encode())
@@ -224,12 +256,12 @@ def main( ):
             #pygame.quit()
 
         # handle all functions
-        DropShit()
-        EliminateShit()
-        ShatOn()
+        ds, t = DropShit(now, shitList)
+        now = t
 
-        anim, direction, posX, anime, directione, posXe = Move(direction)
-        redrawWindow(posX, posY, anim, 0.2, direction, posXe, posYe, anime, directione,countdown_game)
+        if not (ds or EliminateShit(shitList) or ShatOn(shitList)):
+            anim, direction, posX, anime, directione, posXe = Move(direction)
+        redrawWindow(posX, posY, anim, scale, direction, posXe, posYe, anime, directione,countdown_game)
         # anim, direction, posX = move()
         # redraw window     !!! draw(float(posX), float(posY), direction, anim, scale)
 
