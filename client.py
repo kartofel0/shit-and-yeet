@@ -2,6 +2,7 @@ import socket
 import pygame
 from _thread import *
 import os
+import sys
 import time
 from movingSprites import MovingSprites
 from countdown import Countdown
@@ -172,6 +173,7 @@ def DropShit(prev, shitList): #
 
 def EliminateShit(shitList):
     sent = False
+    winner = None
     #if player_type == 'pjn':
     if len(shitList) > 0:
         if shitList[0][0].getPosY() > WINDOW_HEIGHT - shitList[0][0].getHeight():
@@ -182,10 +184,11 @@ def EliminateShit(shitList):
                 my_socket.send('end'.encode())    # run false
             else:
                 my_socket.send('ok'.encode())
-    return sent
+    return sent, winner
 
 def ShatOn(shitList):
     sent = False
+    winner = None
     if player_type == ' hmn':
         rect = player.getRect()
         for shit in shitList:
@@ -193,7 +196,7 @@ def ShatOn(shitList):
                 my_socket.send('hmn,hit'.encode())    # run false
                 sent = True
                 break
-    return sent
+    return sent, winner
 
 
 def redrawShit(): #[ [shit,rect,x,y], ... ]
@@ -233,15 +236,14 @@ def main( ):
     clock = pygame.time.Clock()
     countdown_start = Countdown(3)
     countdown_game = Countdown(30)
-    #shit_countdown = 0
     now = 0
-    # create movingSprites object
+    winner = None
 
     # start 3 sec timer
     # start thread 30 secs
     start_new_thread(countdown_game.startCountdown, ())
 
-    while run:
+    while run and winner == None:
         clock.tick(60)
 
         # handle X button
@@ -249,24 +251,32 @@ def main( ):
             if event.type == pygame.QUIT:
                 run = False
                 pygame.quit()
+                my_socket.close()
 
         if countdown_game.getTime() == 0:
             my_socket.send('end'.encode())
-            run = False
+            winner = 'hmn'
             #pygame.quit()
 
         # handle all functions
         ds, t = DropShit(now, shitList)
         now = t
 
-        if not (ds or EliminateShit(shitList) or ShatOn(shitList)):
+        es, w1 = EliminateShit(shitList)
+        so, w2 = ShatOn(shitList)
+
+        if w1 != None:
+            winner = w1
+        if w2 != None:
+            winner = w2
+
+        if not (ds or es or so):
             anim, direction, posX, anime, directione, posXe = Move(direction)
         redrawWindow(posX, posY, anim, scale, direction, posXe, posYe, anime, directione,countdown_game)
         # anim, direction, posX = move()
         # redraw window     !!! draw(float(posX), float(posY), direction, anim, scale)
 
-    # out of run do stuff ig
-    
+    #endGame(winner)
     pygame.quit()
 
 
