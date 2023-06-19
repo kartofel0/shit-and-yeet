@@ -44,9 +44,10 @@ def threaded_client(client_soc, num):
         # data: ['pjn,rmv']
         # data: ['hmn,hit']
         # data: ['???,end']
+        
         data = client_soc.recv(1024).decode()
         if data != None and data != '':
-            print('message from client: ' + data)
+            #print('message from client: ' + data)
             data = data.split(',')
             type = data[0]
             action = data[1]
@@ -80,6 +81,7 @@ def threaded_client(client_soc, num):
                 client_soc.send(reply.encode())
             
             case 'sht':
+                print('got shit request')
                 x = pijen.getPosX()
                 y = pijen.getPosY()
                 #shitList.insert(0, Shit(x, y, 4))
@@ -90,6 +92,7 @@ def threaded_client(client_soc, num):
                     pijen.shit()
                     reply = str(x) + ',' + str(y)
                 client_soc.send(reply.encode())
+                print('sent shit reply')
 
             case 'rmv':    # shit reached floor, eliminate shit
                 reply = pijen.getShitNum()
@@ -179,8 +182,6 @@ while playerNum < 2:
     #client_soc.send(reply.encode())
     #playerNum += 1
 
-def peepeepoopoo(info):
-    print(info)
 
 
 print('starting threads')
