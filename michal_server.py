@@ -104,7 +104,7 @@ def threaded_client(client_soc, num):
 
                 case 'end':    # timer ended
                     print('time ended, human wins')    # run false, winner = hmn wins
-                    winner='hmn'
+                    winner='human'
                     client_soc.send(winner.encode())
                     
                     run = False
