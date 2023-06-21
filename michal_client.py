@@ -6,13 +6,19 @@ import sys
 import time
 from movingSprites import MovingSprites
 from countdown import Countdown
+from button import *
 
 IP_ADDR = socket.gethostbyname(socket.gethostname())
 PORT = 5555
+
 WHITE = (255,255,255)
 GREY = (131,139,139)
+BLACK = (0,0,0)
+RED = (255,0,0)
 dir_path = os.path.dirname(os.path.realpath(__file__))
 os.chdir(dir_path)
+
+intro_background = pygame.image.load('intro_img.jpg')
 
 # draw window
 pygame.init()
@@ -22,17 +28,7 @@ WINDOW_HEIGHT = 500
 win = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
 pygame.display.set_caption('shit n yeet')
 
-font = pygame.font.Font('test_font.ttf', 20)
-
-# draw floor
-#floor_surface = pygame.Surface((WINDOW_WIDTH,50))
-#floor_surface.set_alpha(128)
-#floor_surface.fill((0,0,0))
-#win.blit(floor_surface, (0,300))
-#floor_rect = floor_surface.get_rect()
-#print('floor surf: ' + str(floor_surface))
-#print('floor rect: ' + str(floor_rect))
-
+font = pygame.font.Font('test_font.ttf', 24)
 
 # connect to server
 my_socket = socket.socket()
@@ -55,7 +51,8 @@ scale = 0.2
 pjn_info = {'anim':True, 'w':7515, 'h':498, 'amount':15}
 hmn_info = {'anim':False, 'w':8602, 'h':669, 'amount':23}
 shitList = []    # [ [shit,rect,x,y], ... ]
-
+clock = pygame.time.Clock()
+FPS = 60
 if player_type == 'pjn':
     enemy_type = 'hmn'
     player_info = pjn_info
@@ -81,36 +78,51 @@ while wait:
     except:
         pass
 
+def resize(img):
+    width = img.get_rect().width
+    height = img.get_rect().height
+    resizeBy = width/WINDOW_WIDTH
+    img = pygame.transform.scale(img, (width/resizeBy, height/resizeBy))
+    return img
+
 def endGame(win, winner):
     print("got to end game")
-    print("winner is", winner)
-    text = font.render("END GAME", True, GREY)
-    text_rect = text.get_rect(center = (WINDOW_WIDTH/2, WINDOW_HEIGHT/2))
+    txt_winnner = ("The winner is "+ winner)
+    textEnd = font.render("GAME ENDED", True, GREY)
+    textWinner = font.render(txt_winnner, True, GREY)
+    textEnd_rect = textEnd.get_rect(center = (WINDOW_WIDTH/2, WINDOW_HEIGHT/2-50))
+    textWinner_rect = textWinner.get_rect(center = (WINDOW_WIDTH/2, WINDOW_HEIGHT/2+50))
     eg_win = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
     while True:
        win.blit(eg_win,(0,0))
-       win.blit(text, text_rect)
+       win.blit(textEnd, textEnd_rect)
+       win.blit(textWinner, textWinner_rect)
        pygame.display.update()
 
-    '''
-    background_colour = (255,255,255)
-    (width, height) = (300, 200)
-    screen = pygame.display.set_mode((width, height))
-    pygame.display.set_caption('Tutorial 1')
-    screen.fill(background_colour)
-    pygame.display.flip()
-    running = True
-    while running:
+def intro():
+    intro = True
+    title = font.render('pijen game', True, WHITE, BLACK)
+    title_rect = title.get_rect(center = (WINDOW_WIDTH/2, WINDOW_HEIGHT/2-200))
+    
+    play_button = Button(WINDOW_WIDTH/2-55, WINDOW_HEIGHT/2+150, 100, 50, RED, BLACK, 'START', 32)
+    play_button.transparentBackGround()
+
+    while intro:
         for event in pygame.event.get():
-            if event. type == pygame.QUIT:
-                running = False
-    '''
-    #windowSurface = pygame.display.set_mode((1000, 750), pygame.DOUBLEBUF)
-    #s = pygame.Surface((1000,750))  # the size of your rect
-    #s.set_alpha(128)                # alpha level
-    #s.fill((255,255,255))           # this fills the entire surface
-    #windowSurface.blit(s, (0,0))    # (0,0) are the top-left coordinates
-    #Countdown(30)
+            if event.type == pygame.QUIT:
+                intro = False
+        
+        mouse_pos = pygame.mouse.get_pos()
+        mouse_pressed = pygame.mouse.get_pressed()
+        
+        if play_button.isPrassed(mouse_pos, mouse_pressed):
+            intro = False
+        resized_back = resize(intro_background)
+        win.blit(resized_back, (0,0))
+        win.blit(title, title_rect)
+        win.blit(play_button.image, play_button.rect)
+        clock.tick(FPS)
+        pygame.display.update()
 
 # returns: anim, direction, posX
 def Move(dir): #
@@ -245,9 +257,9 @@ def redrawWindow(px, py, anim, scale, dir, ex, ey, anime, dire ,cntdwn):
     pygame.display.update()
 
 def main( ):
+    intro()
     run = True
     direction = 'l'
-    clock = pygame.time.Clock()
     countdown_start = Countdown(3)
     countdown_game = Countdown(10)
     now = 0
@@ -270,7 +282,7 @@ def main( ):
         if countdown_game.getTime() == 0:
             my_socket.send((player_type + ',end').encode())
             winner = my_socket.recv(1024).decode()
-            print("winner is", winner)
+            print("winner is ", winner)
             break
             #run = False
             #pygame.quit()
@@ -298,14 +310,4 @@ def main( ):
         
     pygame.quit()
 
-
-#        newX = my_socket.recv(1024).decode()
-#    if player == 'hmn':
-#        my_socket.send('hit'.encode())
-#    if player == 'pjn':
-#        my_socket.send('sht'.encode())
-#        shtLoc = my_socket.recv(1024).decode()
-
-#my_socket.send('end'.encode())
-#my_socket.close()
 main()
