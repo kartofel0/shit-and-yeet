@@ -74,7 +74,7 @@ class MovingSprites():
 
 
     def draw(self, win, x, y, anim, scale, dir=None):
-        #self.x = float(x)
+        self.x = float(x)
         self.y = float(y)
         self.scale = scale
         x = float(x)
