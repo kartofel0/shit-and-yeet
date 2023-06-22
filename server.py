@@ -80,33 +80,40 @@ def threaded_client(client_soc, num):
         match action:
 
             case 'mov':
+                #if type == 'pjn':
+                #    print('got mov from client')
                 if type == 'pjn':
                     pijen.updatePos(addX, 0, pWidth, WINDOW_WIDTH)
+                    #print('updated pijen pos')
                     reply = str(pijen.getPosX()) + ',' + str(human.getAnim()) + ',' + human.getDir() + ',' + str(human.getPosX()) # anim direction posx
+                    #print('prepared reply')
                 elif type == 'hmn':
                     human.updatePos(addX, 0, pWidth, WINDOW_WIDTH)
                     reply = str(human.getPosX()) + ',' + str(pijen.getAnim()) + ',' + pijen.getDir() + ',' + str(pijen.getPosX())
                 # return updated pos
                 client_soc.send(reply.encode())
+                print('mov reply to ' + type + ': ' + reply)
+                #if type == 'pjn':
+                    #print('sent reply to client')
             
             case 'sht':
-                print('got shit request')
+                #print('got shit request')
                 x = pijen.getPosX()
                 y = pijen.getPosY()
                 #shitList.insert(0, Shit(x, y, 4))
                 if type == 'pjn':
                     if pijen.getShitNum() == 0:
-                        print('no more pijen shits left sorry hehe')
+                        print('no more pijen shits left')
                         client_soc.send('no'.encode())
                     else:
                         pijen.shit()
                         shitXY.append(x)
                         shitXY.append(y)
-                        client_soc.send(pickle.dumps(shitXY))
+                        client_soc.send('yes'.encode())
                     #reply = str(x) + ',' + str(y)
                 #client_soc.send(reply.encode())
                 #client_soc.send(pickle.dumps(shitXY))
-                print('sent shit reply')
+                #print('sent shit reply')
 
             case 'rmv':    # shit reached floor, eliminate shit
                 #if type == 'pjn':
@@ -128,7 +135,13 @@ def threaded_client(client_soc, num):
                 run = False
 
         action = ''
-        shitXY = updateShitXY()
+
+        if len(shitXY) != 0:
+            client_soc.send((str(shitXY[0]) + ',' + str(shitXY[1])).encode())
+            y = shitXY.pop()
+            shitXY.append((float(y) + 5))
+
+        #shitXY = updateShitXY()
 
 
 

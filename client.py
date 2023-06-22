@@ -101,6 +101,7 @@ while wait:
 
 # returns: anim, direction, posX
 def Move(dir): #
+    print('start move')
     moveX = 0
     direction = dir
     if player_type == 'hmn':
@@ -120,18 +121,25 @@ def Move(dir): #
         anim = True
         moveX += vel
         direction = 'r'
-    
+    #print('got key input')
+
     # type mov addX pWidth
     my_socket.send((player_type + ',mov,' + str(moveX) + ',' + str(player_info['w']/player_info['amount']*scale) + ',' + str(anim) + ',' + direction).encode()) # type mov movex pwidth anim direction
+    print('sent data to server')
 
     # recieve updated pos
     updt = my_socket.recv(1024).decode()
+    print('recieved data from server')
+    if player_type == 'hmn':
+        print(str(updt))
     updt = updt.split(',')
     posX = updt[0]
     anime = updt[1]
     directione = updt[2]
     posXe = updt[3]
+    print('split data')
 
+    print('end move')
     return anim, direction, posX, anime, directione, posXe
     
 def rearrangeShitXY(shitXY):
@@ -139,14 +147,14 @@ def rearrangeShitXY(shitXY):
     shitXY[1] = str(float(shitXY[1])+pjn_info['h']/2*scale)
     return shitXY
 
-def DropShit(prev, shitXY): #
+def DropShit(prev): #
     # if pressed shift send 'sht' etc
 
     sent = False
     t = time.time()
     #print('t - prev = ' + str(t-prev))
     if (t - prev > 1.15):
-        can_shit = False
+        #can_shit = False
         #data = []
         #if player_type == 'pjn':
 
@@ -162,12 +170,16 @@ def DropShit(prev, shitXY): #
         if sent:
             # recieve position and draw shit
             #data = my_socket.recv(1024).decode()
-            s = my_socket.recv(1024)
-            try:
-                s = s.decode()
-            except:
-                shitXY = pickle.loads(s)
-                shitXY = rearrangeShitXY(shitXY)
+            can = my_socket.recv(1024).decode()
+            if can != 'no':
+                shit = MovingSprites('sht.png', 138, 522, 1)
+                shitImageList.append(shit)
+
+            #try:
+            #    s = s.decode()
+            #except:
+            #    shitXY = pickle.loads(s)
+            #    shitXY = rearrangeShitXY(shitXY)
                 #print('shitXY in dropshit: ' + str(shitXY))
             #print('drop shit recieved data: ' + data)
             #if data == 'no':
@@ -181,17 +193,18 @@ def DropShit(prev, shitXY): #
         #    data = data.split(',')
         #    shit = MovingSprites('sht.png', 138, 522, 1)
         #    shitImageList.append([shit,shit.getRect()])
-            
-    return sent, prev, shitXY
 
-def EliminateShit(shitXY):
+            
+    return sent, prev
+
+def EliminateShit():
     sent = False
     winner = None
     #if player_type == 'pjn':
     if len(shitImageList) > 0:
         if shitImageList[0].getPosY() > WINDOW_HEIGHT - shitImageList[0].getHeight():
             shitImageList.pop()
-            shitXY = []
+            #shitXY = []
             print('shit eliminated')
             my_socket.send((player_type + ',rmv').encode())
             sent = True
@@ -200,7 +213,7 @@ def EliminateShit(shitXY):
                 my_socket.send('end'.encode())    # run false
             else:
                 my_socket.send('ok'.encode())
-    return sent, winner, shitXY
+    return sent, winner
 
 def ShatOn():
     sent = False
@@ -228,23 +241,25 @@ def updateShit(shitImageList, shitXY):
         # add
     return shitImageList
 
-def redrawShit(shitImageList, shitXY): #[ [shit,rect,x,y], ... ]
+def redrawShit(x, y): #[ [shit,rect,x,y], ... ]
     #for i in range(len(shitImageList)):
     #for shit in shitImageList:
     #if len(shitImageList) != 0:
-    print(str(shitXY))
+    #print(str(shitXY))
     print('redraw shit')
+    
     #shit = shitImageList[0]
         #print('shitXY in redraw shit' + str(shitXY))
         #print(str(type(shitXY[0])) + ', ' + str(type(shitXY[1])))
-    shitImageList[0].draw(win, float(shitXY[0]), float(shitXY[1])+5, False, 0.05)
+    shitImageList[0].draw(win, float(x), float(y)+5, False, 0.05)
         #shit[1] = shit[0].getRect()
-    shitXY[1] = shitImageList[0].getPosY()
+    #my_socket.send(str(shitImageList[0].getPosY()).encode())
+    #shitXY[1] = shitImageList[0].getPosY()
         #return shitXY
     #else:
     #    print('no shit')
         #return []
-    return shitXY
+    #return shitXY
     #for shit in shitList:
     #    print('shit')
     #    shit[0].draw(win, float(shit[2]), float(shit[3])+5, False, 0.05)    # win x y false scale
@@ -259,7 +274,11 @@ def printText(content, clr, bgClr, anchor):
     textRect.topleft = anchor
     return text, textRect
 
-def redrawWindow(px, py, anim, scale, dir, ex, ey, anime, dire, cntdwn, shitImageList, shitXY):
+def redrawWindow(px, py, anim, scale, dir, ex, ey, anime, dire, cntdwn):
+    if len(shitImageList) != 0:
+        xy = my_socket.recv(1024).decode()
+        xy = xy.split(',')
+
     win.fill((255,255,255))
 
     now = cntdwn.getTime()
@@ -272,20 +291,19 @@ def redrawWindow(px, py, anim, scale, dir, ex, ey, anime, dire, cntdwn, shitImag
     enemy.draw(win, ex, ey, anime, scale, dire)
     #if player_type == 'pjn':
     if len(shitImageList) != 0:
-        shitXY = redrawShit(shitImageList, shitXY)
+        redrawShit(xy[0], xy[1])
 
     pygame.display.update()
 
-    return shitXY
 
-
-def main(shitImageList, shitXY):
+def main():
     run = True
     direction = 'l'
     clock = pygame.time.Clock()
     countdown_start = Countdown(3)
     countdown_game = Countdown(30)
     now = 0
+    shit_count = 0
     winner = None
 
     # start 3 sec timer
@@ -293,7 +311,7 @@ def main(shitImageList, shitXY):
     start_new_thread(countdown_game.startCountdown, ())
 
     while run and winner == None:
-        print('start frame')
+        #print('start frame')
         clock.tick(60)
 
         # handle X button
@@ -309,17 +327,20 @@ def main(shitImageList, shitXY):
             #pygame.quit()
 
         # handle all functions
-        es, w1, shitXY = EliminateShit(shitXY)
+        #print('before eliminate shit')
+        es, w1 = EliminateShit()
+        #print('after eliminate shit')
         #shitImageList = updateShits(shitImageList, shitInfoList)
         so, w2 = ShatOn()
 
         if not (es or so):
-            ds, t, shitXY = DropShit(now, shitXY)
+            ds, t = DropShit(now)
             #shitImageList = updateShits(shitImageList, shitInfoList)
             now = t
 
-        
-        updateShit(shitImageList, shitXY)
+        #print('before update shit')
+        #updateShit(shitImageList, shitXY)
+        #print('after update shit')
         
 
         if w1 != None:
@@ -327,17 +348,20 @@ def main(shitImageList, shitXY):
         if w2 != None:
             winner = w2
 
+        print('before move')
         if not (ds or es or so):
+            print('inside if')
             anim, direction, posX, anime, directione, posXe = Move(direction)
-        print('before')
-        shitXY = redrawWindow(posX, posY, anim, scale, direction, posXe, posYe, anime, directione, countdown_game, shitImageList, shitXY)
-        print('after')
+        print('after move')
+        #print('before redraw window')
+        redrawWindow(posX, posY, anim, scale, direction, posXe, posYe, anime, directione, countdown_game)
+        #print('after redraw window')
         # anim, direction, posX = move()
         # redraw window     !!! draw(float(posX), float(posY), direction, anim, scale)
         es = False
         so = False
         ds = False
-        print('end frame')
+        #print('end frame')
 
     #endGame(winner)
     pygame.quit()
@@ -352,4 +376,4 @@ def main(shitImageList, shitXY):
 
 #my_socket.send('end'.encode())
 #my_socket.close()
-main(shitImageList, shitXY)
+main()
